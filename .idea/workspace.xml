@@ -4,7 +4,21 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="92098641-30e4-4e3d-b4d5-c4623df731a0" name="Changes" comment="optimize some methods and annotations" />
+    <list default="true" id="92098641-30e4-4e3d-b4d5-c4623df731a0" name="Changes" comment="optimize some methods and annotations">
+      <change beforePath="$PROJECT_DIR$/.idea/EMplanner_Carla.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EMplanner_Carla.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/planner/global_planning.py" beforeDir="false" afterPath="$PROJECT_DIR$/planner/global_planning.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/planner/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/planner/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test_3.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/test_3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test_3_1.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/test_3_1.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test_4.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/test_4.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test_5.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/test_5.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test_6.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/test_6.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test_7.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/test_7.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test_8.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/test_8.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test_9.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/test_9.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -43,27 +57,49 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/GitHub/EMplanner_Carla&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "E:/GitHub/EMplanner_Carla",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\GitHub\EMplanner_Carla\scripts" />
       <recent name="E:\GitHub\EMplanner_Carla\MySimulation" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.test">
+    <configuration name="test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="EMplanner_Carla" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="test_9" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="my_carla_sim" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -88,6 +124,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.test" />
         <item itemvalue="Python.test_9" />
       </list>
     </recent_temporary>
@@ -108,7 +145,7 @@
       <workItem from="1680685661305" duration="1590000" />
       <workItem from="1680687406531" duration="2279000" />
       <workItem from="1680694279827" duration="4317000" />
-      <workItem from="1680748654848" duration="1739000" />
+      <workItem from="1680748654848" duration="13061000" />
     </task>
     <task id="LOCAL-00001" summary="optimize some methods and annotations">
       <created>1668417370086</created>
@@ -253,5 +290,8 @@
     <MESSAGE value="Merge remote-tracking branch 'origin/master'&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml" />
     <MESSAGE value="optimize some methods and annotations" />
     <option name="LAST_COMMIT_MESSAGE" value="optimize some methods and annotations" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/EMplanner_Carla$test.coverage" NAME="test 覆盖结果" MODIFIED="1680772284971" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

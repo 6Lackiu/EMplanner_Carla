@@ -15,13 +15,13 @@ def Vector_fun(loc_1: carla.Location, loc_2: carla.Location):
     计算从loc_1指向loc_2的单位向量
     :param loc_1: carla.Location类型
     :param loc_2: carla.Location类型
-    :return: list 类型【v_x, v_y, v_z】
+    :return: list 类型[v_x, v_y, v_z]
     """
 
     delt_x = loc_2.x - loc_1.x
     delt_y = loc_2.y - loc_1.y
     delt_z = loc_2.z - loc_1.z
-    norm = np.linalg.norm([delt_x, delt_y, delt_z]) + np.finfo(float).eps  # 后面一项不让norm为零
+    norm = np.linalg.norm([delt_x, delt_y, delt_z]) + np.finfo(float).eps  # eps取非负的最小值，为了不让norm为零
     return np.round([delt_x / norm, delt_y / norm, delt_z / norm], 4)  # 保留4位小数
 
 

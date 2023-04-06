@@ -1,6 +1,6 @@
 #   -*- coding: utf-8 -*-
 # @Author  : Xiaoya Liu
-# @File    : test_9.py.py
+# @File    : test_9.py
 
 """
 实现动态障碍物的感知，进行路径规划和速度规划
@@ -96,7 +96,7 @@ def motion_planning(conn):
         vehicle_loc_, pred_loc_, vehicle_v_, vehicle_a_, global_frenet_path_, match_point_list_ = conn.recv()
         start_time = time.time()
         # 1.确定预测点在全局路径上的投影点索引
-        match_point_list_, _ = planner_utiles.find_match_points(xy_list=[pred_loc_],
+        match_point_list_, _ = utils.find_match_points(xy_list=[pred_loc_],
                                                                 frenet_path_node_list=global_frenet_path_,
                                                                 is_first_run=False,
                                                                 pre_match_index=match_point_list_[0])
@@ -107,11 +107,11 @@ def motion_planning(conn):
         # 后面进行动态规划的时候我们搜索的范围就是一百米，所以要保证动态规划的过程中参考线是存在的
 
         # 3.对采样点进行平滑，作为后续规划的参考线
-        local_frenet_path_opt_ = planner_utiles.smooth_reference_line(local_frenet_path_)
+        local_frenet_path_opt_ = utils.smooth_reference_line(local_frenet_path_)
 
         # 计算以车辆当前位置为原点的s_map
-        s_map = planner_utiles.cal_s_map_fun(local_frenet_path_opt_, origin_xy=vehicle_loc_)
-        # path_s, path_l = planner_utiles.cal_s_l_fun(local_frenet_path_opt_, local_frenet_path_opt_, s_map)
+        s_map = utils.cal_s_map_fun(local_frenet_path_opt_, origin_xy=vehicle_loc_)
+        # path_s, path_l = utils.cal_s_l_fun(local_frenet_path_opt_, local_frenet_path_opt_, s_map)
         # 提取障碍物的位置信息
         if len(possible_static_obs_) != 0 and possible_static_obs_[0][-1] <= 30:
             static_obs_xy = []
@@ -119,7 +119,7 @@ def motion_planning(conn):
                 static_obs_xy.append((x, y))
 
             # 计算障碍物的s,l
-            obs_s_list, obs_l_list = planner_utils.cal_s_l_fun(static_obs_xy, local_frenet_path_opt_, s_map)
+            obs_s_list, obs_l_list = utils.cal_s_l_fun(static_obs_xy, local_frenet_path_opt_, s_map)
         else:
             obs_s_list, obs_l_list = [], []
 
@@ -131,7 +131,7 @@ def motion_planning(conn):
                 obs_dis_speed_list.append((dis_, speed_))
 
         # 计算规划起点的s, l
-        begin_s_list, begin_l_list = planner_utils.cal_s_l_fun([pred_loc_], local_frenet_path_opt_, s_map)
+        begin_s_list, begin_l_list = utils.cal_s_l_fun([pred_loc_], local_frenet_path_opt_, s_map)
 
         "自车从规划起点预测后面在不同时刻的位置， 同时预测障碍物在不同时刻的位置，确定二者交汇位置和时间，记录这些信息"
         if len(dynamic_obs_xy) != 0:
@@ -170,14 +170,14 @@ def motion_planning(conn):
         """从规划起点进行动态规划"""
         # 计算规划起点的l对s的导数和偏导数
         l_list, _, _, _, l_ds_list, _, l_dds_list = \
-            planner_utiles.cal_s_l_deri_fun(xy_list=[pred_loc_],
+            utils.cal_s_l_deri_fun(xy_list=[pred_loc_],
                                             V_xy_list=[vehicle_v_],
                                             a_xy_list=[vehicle_a_],
                                             local_path_xy_opt=local_frenet_path_opt_,
                                             origin_xy=pred_loc_)
         # 从起点开始沿着s进行横向和纵向采样，然后动态规划,相邻点之间依据五次多项式进一步采样，间隔一米
         print("*motion planning time cost:", time.time() - start_time)
-        dp_path_s, dp_path_l = motion_plan_path_planning.DP_algorithm(obs_s_list, obs_l_list,
+        dp_path_s, dp_path_l = path_planning.DP_algorithm(obs_s_list, obs_l_list,
                                                                       plan_start_s=begin_s_list[0],
                                                                       plan_start_l=l_list[0],
                                                                       plan_start_dl=l_ds_list[0],
@@ -187,7 +187,7 @@ def motion_planning(conn):
         dp_path_l = dp_path_l[::2]
         dp_path_s = dp_path_s[::2]
         l_min, l_max = \
-            motion_plan_path_planning.cal_lmin_lmax(dp_path_s=dp_path_s, dp_path_l=dp_path_l,
+            path_planning.cal_lmin_lmax(dp_path_s=dp_path_s, dp_path_l=dp_path_l,
                                                     obs_s_list=obs_s_list, obs_l_list=obs_l_list,
                                                     obs_length=5, obs_width=5)  # 这一步的延迟很低，忽略不计
 
@@ -195,7 +195,7 @@ def motion_planning(conn):
         print("l_min_max_length", len(l_min))
         """二次规划"""
         qp_path_l, qp_path_dl, qp_path_ddl = \
-            motion_plan_path_planning.Quadratic_planning(l_min, l_max,
+            path_planning.Quadratic_planning(l_min, l_max,
                                                          plan_start_l=l_list[0],
                                                          plan_start_dl=l_ds_list[0],
                                                          plan_start_ddl=l_dds_list[0])
@@ -210,7 +210,7 @@ def motion_planning(conn):
         path_l.append(qp_path_l[-1])
 
         current_local_frenet_path_opt = \
-            motion_plan_path_planning.frenet_2_x_y_theta_kappa(plan_start_s=begin_s_list[0],
+            path_planning.frenet_2_x_y_theta_kappa(plan_start_s=begin_s_list[0],
                                                                plan_start_l=begin_l_list[0],
                                                                enriched_s_list=path_s,
                                                                enriched_l_list=path_l,
@@ -295,11 +295,11 @@ if __name__ == '__main__':
                                                   frenet_path_node_list=global_frenet_path,
                                                   is_first_run=True,  # 寻找车辆起点的匹配点就属于第一次运行，
                                                   pre_match_index=0)  # 没有上一次运行得到的索引，索引自然是全局路径的起点
-    local_frenet_path = planner_utiles.sampling(match_point_list[0], global_frenet_path)
+    local_frenet_path = utils.sampling(match_point_list[0], global_frenet_path)
     local_frenet_path_opt = utils.smooth_reference_line(local_frenet_path)
     # 计算参考线的s, l
-    cur_s_map = planner_utiles.cal_s_map_fun(local_frenet_path_opt, origin_xy=(vehicle_loc.x, vehicle_loc.y))
-    cur_path_s, cur_path_l = planner_utiles.cal_s_l_fun(local_frenet_path_opt, local_frenet_path_opt, cur_s_map)
+    cur_s_map = utils.cal_s_map_fun(local_frenet_path_opt, origin_xy=(vehicle_loc.x, vehicle_loc.y))
+    cur_path_s, cur_path_l = utils.cal_s_l_fun(local_frenet_path_opt, local_frenet_path_opt, cur_s_map)
 
     """整车参数设定"""
     vehicle_para = (1.015, 2.910 - 1.015, 1412, -148970, -82204, 1537)
@@ -352,7 +352,7 @@ if __name__ == '__main__':
             # 基于笛卡尔坐标系预测ts秒过后车辆的位置，以预测点作为规划起点
             pred_x, pred_y, pred_fi = utils.predict_block(model3_actor, ts=pred_ts)
             # 基于frenet坐标系预测ts秒过后车辆的位置，以预测点作为规划起点
-            # pred_x, pred_y = planner_utiles.predict_block_based_on_frenet(vehicle_loc, vehicle_v,
+            # pred_x, pred_y = utils.predict_block_based_on_frenet(vehicle_loc, vehicle_v,
             #                                                               local_frenet_path_opt,
             #                                                               cur_path_s, cur_path_l, ts=0.2)
 

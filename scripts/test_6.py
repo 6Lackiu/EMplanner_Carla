@@ -1,6 +1,6 @@
 #   -*- coding: utf-8 -*-
 # @Author  : Xiaoya Liu
-# @File    : test_6.py.py
+# @File    : test_6.py
 
 """
 实现障碍物的感知，进行局部路径规划，完善规划轨迹的拼接
@@ -85,19 +85,19 @@ def motion_planning(conn):
         possible_obs_, vehicle_loc_, pred_loc_, vehicle_v_, vehicle_a_, global_frenet_path_, match_point_list_ = conn.recv()
         start_time = time.time()
         # 1.确定预测点在全局路径上的投影点索引
-        match_point_list_, _ = planner_utiles.find_match_points(xy_list=[pred_loc_],
+        match_point_list_, _ = utils.find_match_points(xy_list=[pred_loc_],
                                                                 frenet_path_node_list=global_frenet_path_,
                                                                 is_first_run=False,
                                                                 pre_match_index=match_point_list_[0])
         # 2.根据匹配点的索引在全局路径上采样一定数量的点
-        local_frenet_path_ = planner_utiles.sampling(match_point_list_[0], global_frenet_path_,
+        local_frenet_path_ = utils.sampling(match_point_list_[0], global_frenet_path_,
                                                      back_length=10, forward_length=30)
         # 3.对采样点进行平滑，作为后续规划的参考线
-        local_frenet_path_opt_ = planner_utiles.smooth_reference_line(local_frenet_path_)
+        local_frenet_path_opt_ = utils.smooth_reference_line(local_frenet_path_)
 
         # 计算以车辆当前位置为原点的s_map
-        s_map = planner_utiles.cal_s_map_fun(local_frenet_path_opt_, origin_xy=vehicle_loc_)
-        path_s, path_l = planner_utiles.cal_s_l_fun(local_frenet_path_opt_, local_frenet_path_opt_, s_map)
+        s_map = utils.cal_s_map_fun(local_frenet_path_opt_, origin_xy=vehicle_loc_)
+        path_s, path_l = utils.cal_s_l_fun(local_frenet_path_opt_, local_frenet_path_opt_, s_map)
         # 提取障碍物的位置信息
         if len(possible_obs_) != 0 and possible_obs_[0][-1] <= 30:
             obs_xy = []
@@ -105,7 +105,7 @@ def motion_planning(conn):
                 obs_xy.append((x, y))
 
             # 计算障碍物的s,l
-            obs_s_list, obs_l_list = planner_utiles.cal_s_l_fun(obs_xy, local_frenet_path_opt_, s_map)
+            obs_s_list, obs_l_list = utils.cal_s_l_fun(obs_xy, local_frenet_path_opt_, s_map)
         else:
             obs_s_list, obs_l_list = [], []
         # 计算规划起点的s, l
@@ -228,20 +228,20 @@ if __name__ == '__main__':
     debug = world.debug  # type: carla.DebugHelper
 
     # 2. 将路径点构成的路径转换为【(x, y, theta, kappa], ...】的形式
-    global_frenet_path = planner_utiles.waypoint_list_2_target_path(pathway)
+    global_frenet_path = utils.waypoint_list_2_target_path(pathway)
 
     # 3.提取局部路径
     transform = model3_actor.get_transform()
     vehicle_loc = transform.location  # 获取车辆的当前位置
-    match_point_list, _ = planner_utils.find_match_points(xy_list=[(vehicle_loc.x, vehicle_loc.y)],
+    match_point_list, _ = utils.find_match_points(xy_list=[(vehicle_loc.x, vehicle_loc.y)],
                                                           frenet_path_node_list=global_frenet_path,
                                                           is_first_run=True,  # 寻找车辆起点的匹配点就属于第一次运行，
                                                           pre_match_index=0)  # 没有上一次运行得到的索引，索引自然是全局路径的起点
-    local_frenet_path = planner_utiles.sampling(match_point_list[0], global_frenet_path)
+    local_frenet_path = utils.sampling(match_point_list[0], global_frenet_path)
     local_frenet_path_opt = utils.smooth_reference_line(local_frenet_path)
     # 计算参考线的s, l
-    cur_s_map = planner_utiles.cal_s_map_fun(local_frenet_path_opt, origin_xy=(vehicle_loc.x, vehicle_loc.y))
-    cur_path_s, cur_path_l = planner_utiles.cal_s_l_fun(local_frenet_path_opt, local_frenet_path_opt, cur_s_map)
+    cur_s_map = utils.cal_s_map_fun(local_frenet_path_opt, origin_xy=(vehicle_loc.x, vehicle_loc.y))
+    cur_path_s, cur_path_l = utils.cal_s_l_fun(local_frenet_path_opt, local_frenet_path_opt, cur_s_map)
 
     """整车参数设定"""
     vehicle_para = (1.015, 2.910 - 1.015, 1412, -148970, -82204, 1537)
@@ -288,9 +288,9 @@ if __name__ == '__main__':
             vehicle_v = model3_actor.get_velocity()
             vehicle_a = model3_actor.get_acceleration()
             # 基于笛卡尔坐标系预测ts秒过后车辆的位置，以预测点作为规划起点
-            pred_x, pred_y, pred_fi = planner_utiles.predict_block(model3_actor, ts=pred_ts)
+            pred_x, pred_y, pred_fi = utils.predict_block(model3_actor, ts=pred_ts)
             # 基于frenet坐标系预测ts秒过后车辆的位置，以预测点作为规划起点
-            # pred_x, pred_y = planner_utiles.predict_block_based_on_frenet(vehicle_loc, vehicle_v,
+            # pred_x, pred_y = utils.predict_block_based_on_frenet(vehicle_loc, vehicle_v,
             #                                                               local_frenet_path_opt,
             #                                                               cur_path_s, cur_path_l, ts=0.2)
 

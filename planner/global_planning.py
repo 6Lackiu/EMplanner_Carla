@@ -7,12 +7,13 @@ import carla
 import networkx as nx
 import numpy as np
 from enum import Enum
-from planner import utils
+import utils
 
 
 class RoadOption(Enum):
     """
     RoadOption represents the possible topological configurations when moving from a segment of lane to others.
+    RoadOption表示从一段车道移动到其他车道时可能的拓扑配置
     """
     VOID = -1
     LEFT = 1
@@ -78,7 +79,7 @@ class global_path_planner(object):
         构建图，方便可视化和运用图论的知识进行全局路径规划
         self._graph是一个二向图，属性如下：
             Node properties:
-                vertex: (x,y,z) position in world map， 在DiGraph类型下数据结构为{id: {vertex': (x, y, z)}}
+                vertex: (x,y,z) position in world map， 在DiGraph类型下数据结构为{id: {'vertex': (x, y, z)}}
             Edge properties:
                 entry_vector: 入口点沿切线方向的单位向量（unit vector along tangent at entry point）
                 exit_vector: 出口点沿切线方向的单位向量（unit vector along tangent at exit point）
@@ -127,7 +128,7 @@ class global_path_planner(object):
                                  length=len(path) + 1, path=path,
                                  entry_waypoint=entry_waypoint, exit_waypoint=exit_waypoint,
                                  entry_vector=entry_forward_vector, exit_vector=exit_forward_vector,
-                                 net_vector=planner_utiles.Vector_fun(entry_waypoint.transform.location,
+                                 net_vector=utils.Vector_fun(entry_waypoint.transform.location,
                                                                       exit_waypoint.transform.location),
                                  intersection=intersection, type=RoadOption.LANE_FOLLOW)
 
@@ -150,7 +151,7 @@ class global_path_planner(object):
 
     def _route_search(self, origin, destination):
         """
-        去顶从起点到终点的最优距离
+        使用A*确定从起点到终点的最优距离
         :param origin: carla.Location 类型
         :param destination:
         :return: list类型，成员是图中节点id
@@ -160,14 +161,14 @@ class global_path_planner(object):
         route = self._A_star(start_edge[0], end_edge[0])
         if route is None:  # 如果不可达就报错
             raise nx.NetworkXNoPath(f"Node {start_edge[0]} not reachable from {end_edge[0]}")
-        route.append(end_edge[1])  # 可达的话就将终点所在变得右端点加入路径
+        route.append(end_edge[1])  # 可达的话就将终点所在边的右端点加入路径
         return route
 
     def _A_star(self, n_begin, n_end):
         """
         采用A*算法计算两点之间的最短路径
         :param n_begin: 起点所在边的左端点id
-        :param n_end:  终点所在边的左顶点id
+        :param n_end:  终点所在边的左端点id
         :return: 路径list， 每个元素是图中节点id
         """
         route = []
@@ -176,6 +177,7 @@ class global_path_planner(object):
         open_set[n_begin] = (0, -1)  # 每个节点对应一个元组，第一个元素是节点到起点的最短路径，第二个元素是父节点的id
 
         def cal_heuristic(n):
+            # hypot返回原点到一点的多维欧几里得距离
             return math.hypot(self._graph.nodes[n]['vertex'][0] - self._graph.nodes[n_end]['vertex'][0],
                               self._graph.nodes[n]['vertex'][1] - self._graph.nodes[n_end]['vertex'][1],
                               self._graph.nodes[n]['vertex'][2] - self._graph.nodes[n_end]['vertex'][2])
@@ -191,7 +193,7 @@ class global_path_planner(object):
                 del open_set[c_node]  # 如果当前节点是终点，则把该节点从open_set中移除，加入到close_set.
                 break
             for suc in self._graph.successors(c_node):  # 处理当前所有节点的后继
-                new_cost = self._graph.get_edge_data(c_node, suc)["length"]
+                new_cost = self._graph.get_edge_data(c_node, suc)["length"]     # 当前节点到后继节点的cost
                 if suc in closed_set:  # 如果访问过就不再访问
                     continue
                 elif suc in open_set:  # 如果在即将访问的集合中，判断是否需要更新路径
@@ -201,6 +203,7 @@ class global_path_planner(object):
                     open_set[suc] = (open_set[c_node][0] + new_cost, c_node)
             closed_set[c_node] = open_set[c_node]
             del open_set[c_node]  # 遍历过该节点，则把该节点从open_set中移除，加入到close_set.
+
         route.append(n_end)
         while 1:
             if closed_set[route[-1]][1] != -1:
@@ -220,8 +223,7 @@ class global_path_planner(object):
         min_distance = float('inf')  # 初始情况下设置为最大值
         closest_index = -1
         for i, waypoint in enumerate(waypoint_list):
-            distance = waypoint.transform.location.distance(
-                current_waypoint.transform.location)
+            distance = waypoint.transform.location.distance(current_waypoint.transform.location)
             if distance < min_distance:
                 min_distance = distance
                 closest_index = i
@@ -234,9 +236,9 @@ class global_path_planner(object):
         :param origin: 起点，carla.Location类型
         :param destination: 终点
         :return: list类型，元素是(carla.Waypoint类型, edge["type"]),这里多加了一个边的类型进行输出，
-        是为了后面的更全面考虑某些道路规定的跟车或者超车行为
+                 是为了后面的更全面考虑某些道路规定的跟车或者超车行为
         """
-        route = self._route_search(origin, destination)  # 获取A*的初步规划结果
+        route = self._route_search(origin, destination)  # 获取A*的初步规划结果->list
         origin_wp = self._map.get_waypoint(origin)  # type: carla.Waypoint
         destination_wp = self._map.get_waypoint(destination)  # type: carla.Waypoint
         path_way = []

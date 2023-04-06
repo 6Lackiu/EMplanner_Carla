@@ -84,7 +84,7 @@ for waypoint in pathway:
 # vehicle_para = (1.015, 2.910-1.015, 1412, -110000, -110000, 1537)
 vehicle_para = (1.015, 2.910-1.015, 1412, -148970, -82204, 1537)
 # Lat_controller = Lateral_LQR_controller(ego_vehicle=model3_actor, vehicle_para=vehicle_para, pathway=pathway)
-global_frenet_path = planner_utils.waypoint_list_2_target_path(pathway)
+global_frenet_path = utils.waypoint_list_2_target_path(pathway)
 Controller = Vehicle_control(ego_vehicle=model3_actor, vehicle_para=vehicle_para, pathway=global_frenet_path,
                              # controller_type="LQR_controller")  # 实例化控制器
                              controller_type="MPC_controller")  # 实例化控制器

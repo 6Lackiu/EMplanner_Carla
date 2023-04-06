@@ -149,17 +149,17 @@ pathway = global_route_plan.search_path_way(origin=model3_spawn_point.location,
 debug = world.debug  # type: carla.DebugHelper
 
 # 2. 将路径点构成的路径转换为【(x, y, theta, kappa], ...】的形式
-global_frenet_path = planner_utiles.waypoint_list_2_target_path(pathway)
+global_frenet_path = utils.waypoint_list_2_target_path(pathway)
 
 # 3.提取局部路径
 transform = model3_actor.get_transform()
 vehicle_loc = transform.location  # 获取车辆的当前位置
-match_point_list, _ = planner_utiles.find_match_points(xy_list=[(vehicle_loc.x, vehicle_loc.y)],
+match_point_list, _ = utils.find_match_points(xy_list=[(vehicle_loc.x, vehicle_loc.y)],
                                                        frenet_path_node_list=global_frenet_path,
                                                        is_first_run=True,  # 寻找车辆起点的匹配点就属于第一次运行，
                                                        pre_match_index=0)  # 没有上一次运行得到的索引，索引自然是全局路径的起点
 local_frenet_path = utils.sampling(match_point_list[0], global_frenet_path)
-local_frenet_path_opt = planner_utiles.smooth_reference_line(local_frenet_path)
+local_frenet_path_opt = utils.smooth_reference_line(local_frenet_path)
 """整车参数设定"""
 # vehicle_para = (1.015, 2.910-1.015, 1412, -110000, -110000, 1537)
 vehicle_para = (1.015, 2.910 - 1.015, 1412, -148970, -82204, 1537)
@@ -200,14 +200,14 @@ while True:
         #                                                     color=carla.Color(r=0, g=0, b=255), life_time=1000,
         #                                                     persistent_lines=True)
 
-        match_point_list, _ = planner_utiles.find_match_points(xy_list=[(vehicle_loc.x, vehicle_loc.y)],
+        match_point_list, _ = utils.find_match_points(xy_list=[(vehicle_loc.x, vehicle_loc.y)],
                                                                frenet_path_node_list=global_frenet_path,
                                                                is_first_run=False,
                                                                pre_match_index=match_point_list[0])
         # 2.根据匹配点的索引在全局路径上采样一定数量的点
-        local_frenet_path = planner_utiles.sampling(match_point_list[0], global_frenet_path)
+        local_frenet_path = utils.sampling(match_point_list[0], global_frenet_path)
         # 3.对采样点进行平滑
-        local_frenet_path_opt = planner_utiles.smooth_reference_line(local_frenet_path)
+        local_frenet_path_opt = utils.smooth_reference_line(local_frenet_path)
         # 4.轨迹拼接
         for point in local_frenet_path_opt:
             # print(waypoint)
@@ -228,12 +228,12 @@ while True:
                 obs_xy.append((obs_loc.x, obs_loc.y))
                 print("**********", obs_v.type_id, dis)
 
-            s_map = planner_utiles.cal_s_map_fun(local_frenet_path_opt, origin_xy=(vehicle_loc.x, vehicle_loc.y))
-            obs_s_list, obs_l_list = planner_utils.cal_s_l_fun(obs_xy, local_frenet_path_opt, s_map)
+            s_map = utils.cal_s_map_fun(local_frenet_path_opt, origin_xy=(vehicle_loc.x, vehicle_loc.y))
+            obs_s_list, obs_l_list = utils.cal_s_l_fun(obs_xy, local_frenet_path_opt, s_map)
 
             pred_ts = 0.2
-            pred_x, pred_y, pred_fi = planner_utiles.predict_block(model3_actor, ts=pred_ts)
-            begin_s_list, begin_l_list = planner_utiles.cal_s_l_fun([(pred_x, pred_y)], local_frenet_path_opt, s_map)
+            pred_x, pred_y, pred_fi = utils.predict_block(model3_actor, ts=pred_ts)
+            begin_s_list, begin_l_list = utils.cal_s_l_fun([(pred_x, pred_y)], local_frenet_path_opt, s_map)
             """从规划起点进行动态规划，理论上规划起点应该是当前时刻加上T0, T0是规划周期；由于规划是比较耗时的，所以等规划结束车辆应该运动一段时间了，
             目前没有写速度规划，控制是根据当前位置在参考线上的投影进行追踪的，所以先不考虑规划起点的预测"""
             vehicle_loc = model3_actor.get_transform().location
@@ -241,7 +241,7 @@ while True:
             vehicle_a = model3_actor.get_acceleration()
             # 计算规划起点的l对s的导数和偏导数
             l_list, _, _, _, l_ds_list, _, l_dds_list = \
-                planner_utiles.cal_s_l_deri_fun(xy_list=[(vehicle_loc.x, vehicle_loc.y)],
+                utils.cal_s_l_deri_fun(xy_list=[(vehicle_loc.x, vehicle_loc.y)],
                                                 V_xy_list=[(vehicle_v.x, vehicle_v.y)],
                                                 a_xy_list=[(vehicle_a.x, vehicle_a.y)],
                                                 local_path_xy_opt=local_frenet_path_opt,
