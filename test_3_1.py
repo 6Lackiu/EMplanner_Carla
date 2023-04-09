@@ -1,27 +1,7 @@
 #   -*- coding: utf-8 -*-
 # @Author  : Xiaoya Liu
-# @File    : test_7.py
+# @File    : test_3_1.py
 
-"""
-实现障碍物的感知，进行局部路径规划，完善规划轨迹的拼接
-1.获取匹配点的索引
-2.根据匹配点的索引在全局路径上采样61个点
-3.对采样点进行平滑
-4.轨迹拼接
-5.根据采样得到的局部路径为参考线，实现静态障碍物的避障碍（采用动态规划算法）
-6.采用多进程实现控制和规划分离
-7.二次规划实现更加平滑的避障
-此外还存在一个问题是两个周期之间的规划不连续
-我之前采取的策略是遇到障碍物的时候才采用重规划，判断无障碍物的时候就直接采用参考线作为下个周期的规划路径
-这里存在一个问题就是如果车辆在上个周期结束时刚好位于参考线上或者偏差很小时且下一个周期无障碍物，这时路径之间是连续的，
-但是如果上个周期结束时没有回到参考线，下一个周期直接采用参考线作为局部路径，这时相邻的路径两个相交处就是不连续的
-目前想到两个解决办法：1.直接采用轨迹拼接然后进行平滑，如果偏差较大的话，平滑也很难纠正，这种做法相当于打补丁，不采用
-2.不再采用参考线作为局部规划路径，任何情况都让规划期间期间器进行动态规划和二次规划进行规划，
-这里就需要优化一下动态规划，如果没有障碍物，动态规划就不进行复杂计算，直接生成路径，在本文件code7中我采用的是这种方法
-
-
-目前存在的问题是规划模块计算量过大，在遇到障碍物时规划器无法在规划周期内完成计算,下一个更新重点优化计算量
-"""
 
 import carla
 
@@ -29,11 +9,9 @@ import multiprocessing
 import time
 import math
 import numpy as np
-
-from planner import utils, path_planning
+from planner import planning_utils, path_planning
 from controller.controller import Vehicle_control
 from planner.global_planning import global_path_planner
-from sensors.Sensors_detector_lib import Obstacle_detector
 
 
 def get_traffic_light_state(current_traffic_light):  # get_state()方法只能返回红灯和黄灯状态，没有绿灯状态（默认把绿灯认为正常）
@@ -96,19 +74,19 @@ def motion_planning(conn):
         possible_obs_, vehicle_loc_, pred_loc_, vehicle_v_, vehicle_a_, global_frenet_path_, match_point_list_ = conn.recv()
         start_time = time.time()
         # 1.确定预测点在全局路径上的投影点索引
-        match_point_list_, _ = utils.find_match_points(xy_list=[pred_loc_],
-                                                               frenet_path_node_list=global_frenet_path_,
-                                                               is_first_run=False,
-                                                               pre_match_index=match_point_list_[0])
+        match_point_list_, _ = planning_utils.find_match_points(xy_list=[pred_loc_],
+                                                                frenet_path_node_list=global_frenet_path_,
+                                                                is_first_run=False,
+                                                                pre_match_index=match_point_list_[0])
         # 2.根据匹配点的索引在全局路径上采样一定数量的点
-        local_frenet_path_ = utils.sampling(match_point_list_[0], global_frenet_path_,
-                                                    back_length=10, forward_length=30)
+        local_frenet_path_ = planning_utils.sampling(match_point_list_[0], global_frenet_path_,
+                                                     back_length=10, forward_length=30)
         # 3.对采样点进行平滑，作为后续规划的参考线
-        local_frenet_path_opt_ = utils.smooth_reference_line(local_frenet_path_)
+        local_frenet_path_opt_ = planning_utils.smooth_reference_line(local_frenet_path_)
 
         # 计算以车辆当前位置为原点的s_map
-        s_map = utils.cal_s_map_fun(local_frenet_path_opt_, origin_xy=vehicle_loc_)
-        path_s, path_l = utils.cal_s_l_fun(local_frenet_path_opt_, local_frenet_path_opt_, s_map)
+        s_map = planning_utils.cal_s_map_fun(local_frenet_path_opt_, origin_xy=vehicle_loc_)
+        path_s, path_l = planning_utils.cal_s_l_fun(local_frenet_path_opt_, local_frenet_path_opt_, s_map)
         # 提取障碍物的位置信息
         if len(possible_obs_) != 0 and possible_obs_[0][-1] <= 30:
             obs_xy = []
@@ -116,19 +94,19 @@ def motion_planning(conn):
                 obs_xy.append((x, y))
 
             # 计算障碍物的s,l
-            obs_s_list, obs_l_list = utils.cal_s_l_fun(obs_xy, local_frenet_path_opt_, s_map)
+            obs_s_list, obs_l_list = planning_utils.cal_s_l_fun(obs_xy, local_frenet_path_opt_, s_map)
         else:
             obs_s_list, obs_l_list = [], []
         # 计算规划起点的s, l
-        begin_s_list, begin_l_list = utils.cal_s_l_fun([pred_loc_], local_frenet_path_opt_, s_map)
+        begin_s_list, begin_l_list = planning_utils.cal_s_l_fun([pred_loc_], local_frenet_path_opt_, s_map)
         """从规划起点进行动态规划"""
         # 计算规划起点的l对s的导数和偏导数
         l_list, _, _, _, l_ds_list, _, l_dds_list = \
-            utils.cal_s_l_deri_fun(xy_list=[pred_loc_],
-                                           V_xy_list=[vehicle_v_],
-                                           a_xy_list=[vehicle_a_],
-                                           local_path_xy_opt=local_frenet_path_opt_,
-                                           origin_xy=pred_loc_)
+            planning_utils.cal_s_l_deri_fun(xy_list=[pred_loc_],
+                                   V_xy_list=[vehicle_v_],
+                                   a_xy_list=[vehicle_a_],
+                                   local_path_xy_opt=local_frenet_path_opt_,
+                                   origin_xy=pred_loc_)
         # 从起点开始沿着s进行横向和纵向采样，然后动态规划,相邻点之间依据五次多项式进一步采样，间隔一米
         print("*motion planning time cost:", time.time() - start_time)
         dp_path_s, dp_path_l = path_planning.DP_algorithm(obs_s_list, obs_l_list,
@@ -138,13 +116,12 @@ def motion_planning(conn):
                                                                       plan_start_ddl=l_dds_list[0])
         print("**dp planning time cost:", time.time() - start_time)
         # 对动态规划得到的路径进行降采样，减少二次规划的计算量，然后二次规划完成后再插值填充恢复
+        dp_path_l = dp_path_l[::2]
+        dp_path_s = dp_path_s[::2]
         l_min, l_max = path_planning.cal_lmin_lmax(dp_path_s=dp_path_s, dp_path_l=dp_path_l,
                                                                obs_s_list=obs_s_list, obs_l_list=obs_l_list,
                                                                obs_length=5, obs_width=4)  # 这一步的延迟很低，忽略不计
-        # print("obs s, l", obs_s_list, obs_l_list)
-        # print("l_min", l_min)
-        # print("l_max", l_max)
-        # print("the length of quadratic planning:", len(dp_path_l))
+
         # 二次规划变量过多会导致计算延迟比较高，需要平衡二者之间的关系
         print("l_min_max_length", len(l_min))
         """二次规划"""
@@ -153,14 +130,19 @@ def motion_planning(conn):
                                                                                           plan_start_dl=l_ds_list[0],
                                                                                           plan_start_ddl=l_dds_list[0])
         print("**qp planning time cost:", time.time() - start_time)
-        path_s, path_l = dp_path_s, qp_path_l
-        current_local_frenet_path_opt = path_planning.frenet_2_x_y_theta_kappa(
-            plan_start_s=begin_s_list[0],
-            plan_start_l=begin_l_list[0],
-            enriched_s_list=path_s,
-            enriched_l_list=path_l,
-            frenet_path_opt=local_frenet_path_opt_,
-            s_map=s_map)
+        path_s = [dp_path_s[0]]
+        path_l = [qp_path_l[0]]
+        for i in range(1, len(qp_path_l)):
+            path_s.append((dp_path_s[i] + dp_path_s[i - 1]) / 2)
+            path_l.append((qp_path_l[i] + qp_path_l[i - 1]) / 2)
+        path_s.append(dp_path_s[-1])
+        path_l.append(qp_path_l[-1])
+        current_local_frenet_path_opt = path_planning.frenet_2_x_y_theta_kappa(plan_start_s=begin_s_list[0],
+                                                                                           plan_start_l=begin_l_list[0],
+                                                                                           enriched_s_list=path_s,
+                                                                                           enriched_l_list=path_l,
+                                                                                           frenet_path_opt=local_frenet_path_opt_,
+                                                                                           s_map=s_map)
         # 将重新规划得到的路径信息发送给主进程，让控制器进行轨迹跟踪
         conn.send((current_local_frenet_path_opt, match_point_list_, path_s, path_l))
         print("***motion planning time cost:", time.time() - start_time)
@@ -194,79 +176,28 @@ if __name__ == '__main__':
     physics_control = carla.VehiclePhysicsControl()  # type: carla.VehiclePhysicsControl
     physics_control.mass = 1412  # 质量kg
     model3_actor.apply_physics_control(physics_control)
-    """为车辆配备一个障碍物的传感器"""
-    obs_detector = Obstacle_detector(ego_vehicle=model3_actor, world=world)  # 实例化传感器
-    obs_detector.create_sensor()  # 在仿真环境中生成传感器
-
-    """设置静止车辆"""
-    # # 静止车辆1
-    obs_vehicle_bp1 = world.get_blueprint_library().find('vehicle.tesla.model3')
-    obs_vehicle_bp1.set_attribute('color', '0,0,255')
-    obs_spawn_point1 = carla.Transform()
-    obs_spawn_point1.location = carla.Location(x=189.31, y=76.61, z=0.3)
-    obs_spawn_point1.rotation = model3_spawn_point.rotation
-    obs_actor1 = world.spawn_actor(obs_vehicle_bp1, obs_spawn_point1)  # type: carla.Vehicle
-    #
-    # # 静止车辆2
-    obs_vehicle_bp2 = world.get_blueprint_library().find('vehicle.audi.a2')
-    obs_vehicle_bp2.set_attribute('color', '0,255,0')
-    obs_spawn_point2 = carla.Transform()
-    obs_spawn_point2.location = carla.Location(x=196.31, y=58.61, z=0.3)
-    obs_spawn_point2.rotation = model3_spawn_point.rotation
-    obs_actor2 = world.spawn_actor(obs_vehicle_bp2, obs_spawn_point2)  # type: carla.Vehicle
-
-    # 静止车辆3
-    obs_vehicle_bp3 = world.get_blueprint_library().find('vehicle.dodge.charger_police')
-    obs_vehicle_bp3.set_attribute('color', '255,0,0')
-    obs_spawn_point3 = carla.Transform()
-    obs_spawn_point3.location = carla.Location(x=185.01, y=76.61, z=0.3)
-    obs_spawn_point3.rotation = model3_spawn_point.rotation
-    obs_actor3 = world.spawn_actor(obs_vehicle_bp3, obs_spawn_point3)  # type: carla.Vehicle
-
-    # obs_vehicle_bpx = world.get_blueprint_library().find('vehicle.dodge.charger_police')
-    # obs_vehicle_bpx.set_attribute('color', '255,0,0')
-    # obs_spawn_pointx = carla.Transform()
-    # obs_spawn_pointx.location = carla.Location(x=192.01, y=76.61+18, z=0.3)
-    # obs_spawn_pointx.rotation = model3_spawn_point.rotation
-    # obs_actorx = world.spawn_actor(obs_vehicle_bpx, obs_spawn_pointx)  # type: carla.Vehicle
-
-    # 静止车辆4
-    obs_vehicle_bp4 = world.get_blueprint_library().find('vehicle.toyota.prius')
-    obs_vehicle_bp4.set_attribute('color', '255,255,0')
-    obs_spawn_point4 = carla.Transform()
-    obs_spawn_point4.location = carla.Location(x=204.01, y=64.61, z=0.3)
-    obs_spawn_point4.rotation = model3_spawn_point.rotation
-    obs_actor4 = world.spawn_actor(obs_vehicle_bp4, obs_spawn_point4)  # type: carla.Vehicle
-
-    # carla.Vehicle# 静止车辆5
-    obs_vehicle_bp5 = world.get_blueprint_library().find('vehicle.toyota.prius')
-    obs_vehicle_bp5.set_attribute('color', '255,255,0')
-    obs_spawn_point5 = carla.Transform()
-    obs_spawn_point5.location = carla.Location(x=174.01, y=147.61, z=0.3)
-    obs_spawn_point5.rotation = model3_spawn_point.rotation
-    obs_actor5 = world.spawn_actor(obs_vehicle_bp5, obs_spawn_point5)  # type: carla.Vehicle
 
     """路径规划"""
     # 1. 规划路径，输出的每个路径点是一个元组形式【(wp, road_option), ...】第一个是元素是carla中的路点，第二个是当前路点规定的一些车辆行为
     pathway = global_route_plan.search_path_way(origin=model3_spawn_point.location,
-                                                destination=All_spawn_points[48].location)
+                                                destination=All_spawn_points[12].location)
     debug = world.debug  # type: carla.DebugHelper
 
     # 2. 将路径点构成的路径转换为【(x, y, theta, kappa], ...】的形式
-    global_frenet_path = utils.waypoint_list_2_target_path(pathway)
+    global_frenet_path = planning_utils.waypoint_list_2_target_path(pathway)
 
     # 3.提取局部路径
     transform = model3_actor.get_transform()
     vehicle_loc = transform.location  # 获取车辆的当前位置
-    match_point_list, _ = utils.find_match_points(xy_list=[(vehicle_loc.x, vehicle_loc.y)],
-                                                          frenet_path_node_list=global_frenet_path,
-                                                          is_first_run=True,  # 寻找车辆起点的匹配点就属于第一次运行，
-                                                          pre_match_index=0)  # 没有上一次运行得到的索引，索引自然是全局路径的起点
-    local_frenet_path = utils.sampling(match_point_list[0], global_frenet_path)
-    local_frenet_path_opt = utils.smooth_reference_line(local_frenet_path)
+    match_point_list, _ = planning_utils.find_match_points(xy_list=[(vehicle_loc.x, vehicle_loc.y)],
+                                                           frenet_path_node_list=global_frenet_path,
+                                                           is_first_run=True,  # 寻找车辆起点的匹配点就属于第一次运行，
+                                                           pre_match_index=0)  # 没有上一次运行得到的索引，索引自然是全局路径的起点
+    local_frenet_path = planning_utils.sampling(match_point_list[0], global_frenet_path)
+    local_frenet_path_opt = planning_utils.smooth_reference_line(local_frenet_path)
     # 计算参考线的s, l
-    cur_s_map = utils.cal_s_map_fun(local_frenet_path_opt, origin_xy=(vehicle_loc.x, vehicle_loc.y))
-    cur_path_s, cur_path_l = utils.cal_s_l_fun(local_frenet_path_opt, local_frenet_path_opt, cur_s_map)
+    cur_s_map = planning_utils.cal_s_map_fun(local_frenet_path_opt, origin_xy=(vehicle_loc.x, vehicle_loc.y))
+    cur_path_s, cur_path_l = planning_utils.cal_s_l_fun(local_frenet_path_opt, local_frenet_path_opt, cur_s_map)
 
     """整车参数设定"""
     vehicle_para = (1.015, 2.910 - 1.015, 1412, -148970, -82204, 1537)
@@ -275,6 +206,7 @@ if __name__ == '__main__':
     Controller = Vehicle_control(ego_vehicle=model3_actor, vehicle_para=vehicle_para,
                                  pathway=local_frenet_path_opt,
                                  controller_type=controller)  # 实例化控制器
+
     DIS = math.sqrt((pathway[0][0].transform.location.x - pathway[1][0].transform.location.x) ** 2
                     + (pathway[0][0].transform.location.y - pathway[1][0].transform.location.y) ** 2)  # 计算轨迹相邻点之间的距离
     print("The distance between two adjacent points in route:", DIS)
@@ -286,81 +218,49 @@ if __name__ == '__main__':
     spectator = world.get_spectator()
     count = 1  # 控制规划器和控制器相对频率
     main_process_start_time = time.time()
-    planning_count = 100
+    plan_count = 50
+    control_count = 10
     pred_ts = 0.2
-    # planning_count = 250
-    # pred_ts = 0.4
     while True:
         """获取交通速度标志,考虑道路速度限制"""
         # 获取车辆位置信息（包括坐标和姿态信息）， get the transformation, a combination of location and rotation
         transform = model3_actor.get_transform()
         # 不断更新观测视角的位置， update the position of spectator
-        spectator.set_transform(carla.Transform(transform.location + carla.Location(z=40), carla.Rotation(pitch=-90)))
+        spectator.set_transform(carla.Transform(transform.location + carla.Location(z=20), carla.Rotation(pitch=-90)))
         vehicle_loc = transform.location  # 获取车辆的当前位置
 
         """获取局部路径，局部路径规划的频率是控制的1/10"""
-        if count % planning_count == 0:  # 这里表示控制器执行一千规划器执行一次
+        if count % plan_count == 0:  # 这里表示控制器执行一千规划器执行一次
+            cur_time = time.time()
             print("main_process_cost_time", time.time() - main_process_start_time)
-            main_process_start_time = time.time()
-            # mark = "replan" + str((round(vehicle_loc.x, 2), round(vehicle_loc.y, 2)))
-            # world.debug.draw_string(carla.Location(vehicle_loc.x, vehicle_loc.y, 2), mark, draw_shadow=False,
-            #                         color=carla.Color(r=0, g=0, b=255), life_time=1000,
-            #                         persistent_lines=True)
-            # debug.draw_point(carla.Location(vehicle_loc.x, vehicle_loc.y, 2),
-            #                  size=0.05, color=carla.Color(0, 0, 0), life_time=0)
+            main_process_start_time = cur_time
 
             vehicle_loc = model3_actor.get_transform().location
             vehicle_v = model3_actor.get_velocity()
             vehicle_a = model3_actor.get_acceleration()
             # 基于笛卡尔坐标系预测ts秒过后车辆的位置，以预测点作为规划起点
-            pred_x, pred_y, pred_fi = utils.predict_block(model3_actor, ts=pred_ts)
+            pred_x, pred_y, pred_fi = planning_utils.predict_block(model3_actor, ts=pred_ts)
             # 基于frenet坐标系预测ts秒过后车辆的位置，以预测点作为规划起点
-            # pred_x, pred_y = utils.predict_block_based_on_frenet(vehicle_loc, vehicle_v,
+            # pred_x, pred_y = planning_utils.predict_block_based_on_frenet(vehicle_loc, vehicle_v,
             #                                                               local_frenet_path_opt,
             #                                                               cur_path_s, cur_path_l, ts=0.2)
-
-            # mark = "predict" + str((round(pred_x, 2), round(pred_y, 2)))
-            # world.debug.draw_string(carla.Location(pred_x, pred_y, 2), mark, draw_shadow=False,
-            #                         color=carla.Color(r=0, g=0, b=255), life_time=1000,
-            #                         persistent_lines=True)
-            # debug.draw_point(carla.Location(pred_x, pred_y, 2),
-            #                  size=0.05, color=carla.Color(255, 255, 255), life_time=0)
             """
             没有找到合适的传感器，暂时用车联网的方法,设定合适的感知范围，获取周围环境中的actor，这里我们人为制造actor作为障碍物
             再到后面可以考虑用多传感器数据融合来做动态和静态障碍物的融合感知
             """
-            possible_obs = get_actor_from_world(model3_actor, dis_limitation=50)
             # 提取障碍物的位置信息
             obs_xy = []
-            for obs_v, dis in possible_obs:
-                obs_loc = obs_v.get_transform().location
-                obs_xy.append((obs_loc.x, obs_loc.y, dis))
-                print("**********", obs_v.type_id, dis)
-            # 将当前的道路状况和车辆信息发送给规划器进行规划控制
+
             conn1.send((obs_xy, (vehicle_loc.x, vehicle_loc.y), (pred_x, pred_y),
                         (vehicle_v.x, vehicle_v.y), (vehicle_a.x, vehicle_a.y),
                         global_frenet_path, match_point_list))
-
-            if count != planning_count:  # 第一个循环周期，因为有初始阶段规划好的局部路径，第二个周期的规划还未计算完成，一旦执行接收数据，会阻塞主进程
+            if count != plan_count:  # 第一个循环周期，因为有初始阶段规划好的局部路径，第二个周期的规划还未计算完成，一旦执行接收数据，会阻塞主进程
                 cur_local_frenet_path_opt, match_point_list, cur_path_s, cur_path_l = conn1.recv()  # 新规划出的轨迹
-                """轨迹拼接
-                思路比较简单，由于规划是在预测点进行的，对下个周期进行规划，因此当前周期的车辆运动结束点一定在预测点之前，
-                找到上个规划周期轨迹中距离预测点最近的点，与新的规划路径进行拼接，保证轨迹的连续性,拼接完之后还需要进一步平滑
-                """
-                # min_DIS = 10000
-                # for i in range(len(local_frenet_path_opt)):
-                #     if (pred_x - local_frenet_path_opt[i][0]) ** 2 + (
-                #             pred_y - local_frenet_path_opt[i][1]) ** 2 < min_DIS:
-                #         min_DIS = (pred_x - local_frenet_path_opt[i][0]) ** 2 + (
-                #                 pred_y - local_frenet_path_opt[i][1]) ** 2
-                #     else:
-                #         local_frenet_path_opt = local_frenet_path_opt[0:i] + cur_local_frenet_path_opt
-                #         break
                 local_frenet_path_opt = cur_local_frenet_path_opt
                 for point in local_frenet_path_opt:
                     # print(waypoint)
                     debug.draw_point(carla.Location(point[0], point[1], 2),
-                                     size=0.05, color=carla.Color(255, 0, 0), life_time=0.3)
+                                     size=0.05, color=carla.Color(255, 0, 0), life_time=0)
             # 注意重新实例化控制器的位置，不能放错了
             Controller = Vehicle_control(ego_vehicle=model3_actor, vehicle_para=vehicle_para,
                                          pathway=local_frenet_path_opt,
@@ -379,8 +279,8 @@ if __name__ == '__main__':
         # # 将预测点和投影点的位置标出来, mark the predicted point and project point in the simulation world for debug
         debug.draw_point(carla.Location(Controller.Lat_control.x_pre, Controller.Lat_control.y_pre, 2),
                          size=0.05, color=carla.Color(0, 255, 255), life_time=0)
-        debug.draw_point(carla.Location(Controller.Lat_control.x_pro, Controller.Lat_control.y_pro, 2),
-                         size=0.05, color=carla.Color(100, 0, 0), life_time=0)
+        # debug.draw_point(carla.Location(Controller.Lat_control.x_pro, Controller.Lat_control.y_pro, 2),
+        #                  size=0.05, color=carla.Color(100, 0, 0), life_time=0)
 
         """距离判断，程序终止条件"""
         count += 1

@@ -1,8 +1,7 @@
 #   -*- coding: utf-8 -*-
 # @Author  : Xiaoya Liu
 # @File    : speed_planning.py
-import numpy as np
-from planner import utils
+
 """
 本文件解决的是运动规划下的速度规划问题，解决动态障碍物问题
 在已知笛卡尔坐标系下的路径之后，进行速度规划的四个步骤：
@@ -12,6 +11,8 @@ from planner import utils
 4.速度规划，二次规划
 """
 
+import numpy as np
+from planner import planning_utils
 
 def construct_ST_graph_and_planning(path_s: list, ego_pos: int, ego_speed: int, ego_acc: int,
                                     obs_pos: list, obs_speed: list,
@@ -134,8 +135,8 @@ def cal_start_cost(obs_s_list, obs_t_list,
     end_s = end_s
 
     # 计算五次多项式的系数
-    coeffi = utils.cal_quintic_coefficient(start_t, start_dt, start_ddt,
-                                           end_t, end_dt, end_ddt, start_s, end_s)
+    coeffi = planning_utils.cal_quintic_coefficient(start_t, start_dt, start_ddt,
+                                                    end_t, end_dt, end_ddt, start_s, end_s)
     # 在五次多项式构成的曲线上采样十个点计算cost
     s = np.zeros(shape=(10, 1))
     # l = np.zeros(shape=(10, 1))  # reserve memory space

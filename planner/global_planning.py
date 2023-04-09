@@ -7,7 +7,7 @@ import carla
 import networkx as nx
 import numpy as np
 from enum import Enum
-import utils
+from planner import planning_utils
 
 
 class RoadOption(Enum):
@@ -128,7 +128,7 @@ class global_path_planner(object):
                                  length=len(path) + 1, path=path,
                                  entry_waypoint=entry_waypoint, exit_waypoint=exit_waypoint,
                                  entry_vector=entry_forward_vector, exit_vector=exit_forward_vector,
-                                 net_vector=utils.Vector_fun(entry_waypoint.transform.location,
+                                 net_vector=planning_utils.Vector_fun(entry_waypoint.transform.location,
                                                                       exit_waypoint.transform.location),
                                  intersection=intersection, type=RoadOption.LANE_FOLLOW)
 

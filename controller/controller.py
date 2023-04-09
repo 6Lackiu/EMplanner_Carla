@@ -6,7 +6,7 @@ import cvxopt
 import numpy as np
 import math
 import carla
-from planner.utils import cal_heading_kappa
+from planner.planning_utils import cal_heading_kappa
 from collections import deque
 
 # print_flag = False
@@ -481,7 +481,7 @@ class Lateral_LQR_controller(object):
                 break
             P_pre = P
         if print_flag:
-            print("黎卡提方程爹迭代次数：", i)  # 输出迭代的次数
+            print("黎卡提方程迭代次数：", i)  # 输出迭代的次数
 
         self.K = np.linalg.inv(BT @ P @ B + R) @ (BT @ P @ A)
 
