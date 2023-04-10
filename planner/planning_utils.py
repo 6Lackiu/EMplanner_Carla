@@ -272,7 +272,7 @@ def smooth_reference_line(local_frenet_path_xy: list,
             w_cost_ref: 几何相似代价权重        三个权重的确定直接影响平滑的形状，这里值重要的超参数
             y_thre: x的波动阈值，阈值用于约束目标值不要和原始值相差太远
             x_thre: y的波动阈值
-    return: 优化后的坐标 local_path_xy_opt= [(x_opt0, y_opt0, theta_0, kappa_0), ...]
+    return: 平滑后的坐标 local_path_xy_opt= [(x_opt0, y_opt0, theta_0, kappa_0), ...]
 
     使用二次规划进行平滑处理，具体理论看笔记
     min(0.5*x'.H.x + f'x)
