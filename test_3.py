@@ -50,7 +50,7 @@ print(model3_spawn_point)
 model3_actor = world.spawn_actor(model3_bp, model3_spawn_point)  # type: carla.Vehicle
 # 定义轮胎特性
 # wheel_f = carla.WheelPhysicsControl()  # type: carla.WheelPhysicsControl
-# 定义车辆特性，这里暂时没有使用具体参数，后面引入carsim的时候会用
+# 定义车辆特性，这里暂时没有使用具体参数，后面引入CarSim的时候会用
 physics_control = carla.VehiclePhysicsControl()  # type: carla.VehiclePhysicsControl
 physics_control.mass = 1412  # 质量kg
 model3_actor.apply_physics_control(physics_control)
@@ -59,7 +59,7 @@ model3_actor.apply_physics_control(physics_control)
 obs_vehicle_bp1 = world.get_blueprint_library().find('vehicle.tesla.model3')
 obs_vehicle_bp1.set_attribute('color', '0,0,255')
 obs_spawn_point1 = carla.Transform()
-obs_spawn_point1.location = carla.Location(x=189.31, y=76.61, z=0.3)
+obs_spawn_point1.location = carla.Location(x=193, y=60, z=0.3)
 obs_spawn_point1.rotation = model3_spawn_point.rotation
 obs_actor1 = world.spawn_actor(obs_vehicle_bp1, obs_spawn_point1)  # type: carla.Vehicle
 
@@ -95,7 +95,7 @@ print("The distance between two adjacent points in route:", DIS)
 direction = []
 speed = []
 target_speed = []
-max_speed = 60  # 初始速度设为50km/h
+max_speed = 50  # 初始速度设为50km/h
 
 while True:
     # 设定一个观察者视角
