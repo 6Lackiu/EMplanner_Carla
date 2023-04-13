@@ -27,7 +27,7 @@ print("the number of waypoints:", len(All_waypoints))
 #     # print(waypoint)
 #     debug.draw_point(waypoint.transform.location + carla.Location(0, 0, 2), size=0.05, color=carla.Color(0, 255, 0), life_time=0)
 
-# debug = World.debug  # type: # carla.DebugHelperw
+# debug = World.debug  # type: # carla.DebugHelper
 spawn_point = None  # type: carla.Transform
 i = 0
 for spawn_point in All_spawn_points:
