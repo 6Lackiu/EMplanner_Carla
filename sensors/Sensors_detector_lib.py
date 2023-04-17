@@ -95,8 +95,8 @@ class Obstacle_detector_sensor(object):
 class Obstacle_detector(object):
     """
     重写一个障碍传感器构建模块，用于测试规划决策代码，这里和上面的主要区别是实例化的时候传入的是车辆和world
-    原理：In order to anticipate obstacles,
-    the sensor creates a capsular shape ahead of the parent vehicle and uses it to check for collisions.
+    原理：In order to anticipate obstacles, the sensor creates a capsular shape ahead of the parent vehicle and uses it to check for collisions.
+         为了预测障碍物，传感器在主车辆前方创建一个胶囊形状，并使用它来检查碰撞情况
     """
     def __init__(self, ego_vehicle, world):
         self.obstacle_detector = None

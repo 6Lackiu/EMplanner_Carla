@@ -9,8 +9,8 @@ import carla
 from planner.planning_utils import cal_heading_kappa
 from collections import deque
 
-# print_flag = False
-print_flag = True
+print_flag = False
+# print_flag = True
 
 """
 MPC 控制算法进行横向控制

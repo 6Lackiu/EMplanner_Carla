@@ -28,7 +28,7 @@ def Vector_fun(loc_1: carla.Location, loc_2: carla.Location):
 
 def waypoint_list_2_target_path(pathway):
     """
-    将由路点构成的路径转化为（x, y, theta, k）的形式
+    将由路点构成的路径转化为(x, y, theta, k)的形式
     param: pathway: [waypoint0, waypoint1, ...]
     return: [(x0, y0, theta0, k0), ...]
     """
@@ -58,8 +58,8 @@ def find_match_points(xy_list: list, frenet_path_node_list: list, is_first_run: 
             frenet_path_node_list: frenet坐标系下路径点信息,指的是全局路径点
             frenet_path_node_list = [(x0, y0, heading0, kappa0), ...],(x, y, 切线与x轴夹角， 曲率)
     return:
-            match_point_index_list 匹配点的索引
-            project_node_list 投影点的位置信息， project_node_list = [(x_p0, y_p0, heading_p0, kappa_p0), ...]
+            match_point_index_list 匹配点在frenet_path下的编号的集合(即从全局路径第一个点开始数，第几个点是匹配点)
+            project_node_list 投影点的信息， project_node_list = [(x_p0, y_p0, heading_p0, kappa_p0), ...]
     """
 
     i = -1  # 提前定义一个变量用于遍历曲线上的点
@@ -79,7 +79,7 @@ def find_match_points(xy_list: list, frenet_path_node_list: list, is_first_run: 
             # 确定匹配点
             for i in range(start_index, frenet_path_length):
                 frenet_node_x, frenet_node_y, _, _ = frenet_path_node_list[i]
-                # 计算（x,y) 与 （frenet_node_x, frenet_node_y） 之间的距离
+                # 计算(x,y)与(frenet_node_x, frenet_node_y)之间的距离
                 distance = math.sqrt((frenet_node_x - x) ** 2 + (frenet_node_y - y) ** 2)
                 if distance < min_distance:
                     min_distance = distance  # 保留最小值
@@ -231,8 +231,8 @@ def cal_heading_kappa(frenet_path_xy_list: list):
 def sampling(match_point_index: int, frenet_path_node_list: list, back_length=10, forward_length=50):
     """
     根据匹配点确定局部参考线，用于后平滑和局部规划使用
-    param:  match_point_index: 当前匹配点在frenet曲线（全局离散路径）中的索引
-            frenet_path_node_list: frenet曲线
+    param:  match_point_index: 当前匹配点(自车位置)在frenet曲线(局离散路径)中的索引
+            frenet_path_node_list: 全局路径数据
             back_length: 投影点向后采样点数
             forward_length: 投影点向前采样点数
 
@@ -269,7 +269,7 @@ def smooth_reference_line(local_frenet_path_xy: list,
             二次规划只是对离散曲线进行平滑，索引索引的是元组的前两个元素x，y，规划后再计算theta和曲率
             w_cost_smooth: 平滑代价权重
             w_cost_length: 紧凑代价权重
-            w_cost_ref: 几何相似代价权重        三个权重的确定直接影响平滑的形状，这里值重要的超参数
+            w_cost_ref: 几何相似代价权重        三个权重的确定直接影响平滑的形状，重要的超参数
             y_thre: x的波动阈值，阈值用于约束目标值不要和原始值相差太远
             x_thre: y的波动阈值
     return: 平滑后的坐标 local_path_xy_opt= [(x_opt0, y_opt0, theta_0, kappa_0), ...]
@@ -295,7 +295,7 @@ def smooth_reference_line(local_frenet_path_xy: list,
                   .....
                   .....]
     A3 是单位矩阵
-    设置求解矩阵的规模，每次的优化规模是len(local_frenet_path_xy) 181(老王)个点，每个点有两个坐标
+    设置求解矩阵的规模，每次的优化规模是len(local_frenet_path_xy) (老王:181)个点，每个点有两个坐标
     """
     n = len(local_frenet_path_xy)  # 该模块是对参考线输出进行处理的时候就是处理181个点
     x_ref = np.zeros(shape=(2 * n, 1))  # [x_ref0, y_ref0, x_ref1, y_ref1, ...]' 输入坐标构成的坐标矩阵， (2*n, 1)
@@ -453,8 +453,8 @@ def cal_s_map_fun(local_path_opt: list, origin_xy: tuple):
     return: s_map: list类型 和输入的参考线长度相同
     """
     # 计算以车辆当前位置投影点为起点的s_map
-    origin_match_index, _ = match_projection_points([origin_xy], local_path_opt)  # 通过
-    # 车辆定位位置，计算其在参考线上的匹配点索引和投影点信息，match_projection_points处理的是一系列点的列表，
+    origin_match_index, _ = match_projection_points([origin_xy], local_path_opt)
+    # 通过车辆定位位置，计算其在参考线上的匹配点索引和投影点信息，match_projection_points处理的是一系列点的列表，
     # 因此输入要为列表形式，输出也是列表形式，但是里面只有一个元素(当前位置)，因此索引第一位就行了
     origin_match_index = origin_match_index[0]
     ref_s_map = [0]
@@ -502,7 +502,8 @@ def cal_s_l_fun(obs_xy_list: list, local_path_opt: list, s_map: list):
         r_h = np.array([x, y])  # 车辆实际位置的位矢
         r_r = np.array([pro_x, pro_y])  # 投影点的位矢
         # 核心公式: l*n_r = r_h - r_r
-        l_list.append(np.dot(r_h - r_r, n_r))  # *UE4定义的是左手系，所以在车辆左侧的为负值*
+        # TODO 将左手系改为右手系，使得SL图为常见方向
+        l_list.append(np.dot(r_h - r_r, n_r))  # *UE4定义的是左手系，所以在车辆左侧的为负值(SL图是反的)*
 
     return s_list, l_list
 
@@ -596,13 +597,13 @@ def predict_block(ego_vehicle, ts=0.1):
     x, y = vehicle_loc.x, vehicle_loc.y
     fi = ego_vehicle.get_transform().rotation.yaw * (math.pi / 180)  # 车身横摆角（弧度制），车头朝向和x轴的夹角
     V = ego_vehicle.get_velocity()  # 航向角是速度方向与x轴夹角
-    V_length = math.sqrt(V.x * V.x + V.y * V.y + V.z * V.z)     # 速度标量
+    V_length = math.sqrt(V.x * V.x + V.y * V.y + V.z * V.z)  # 速度标量
     beta = math.atan2(V.y, V.x) - fi  # 质心侧偏角，速度方向和车头朝向之间的夹角
     # print("beta", beta, "fi", fi)
     V_y = V_length * math.sin(beta)  # 车速在车身坐标系下的分量
     V_x = V_length * math.cos(beta)
     # print("Vx", Vx, "Vy", Vy)
-    x = x + V_x * ts * math.cos(fi) - V_y * ts * math.sin(fi)   # ?
+    x = x + V_x * ts * math.cos(fi) - V_y * ts * math.sin(fi)  # ?
     y = y + V_y * ts * math.cos(fi) + V_x * ts * math.sin(fi)
     fi_dao = ego_vehicle.get_angular_velocity().z * (math.pi / 180)
     fi = fi + fi_dao * ts
@@ -629,8 +630,8 @@ def predict_block_based_on_frenet(vehicle_loc, vehicle_velocity, local_frenet_pa
     # 计算规划起点的s
     s0 = max(cur_path_s[0], 0)
     s = s0 + speed * ts
-    print("cur_path_s", cur_path_s)
-    print("predicted s", s)
+    # print("cur_path_s", cur_path_s)
+    # print("predicted s", s)
     index = np.argmin(abs(np.array(cur_path_s) - s))
     l = cur_path_l[index]
     proj_x, proj_y, proj_theta, proj_kappa, pre_match_index = cal_proj_point_1(s, 0, local_frenet_path_opt, s_map)
@@ -655,7 +656,7 @@ def cal_proj_point_1(s, pre_match_index, frenet_path_opt: list, s_map: list):
         start_s_match_index += 1
     mp_x, mp_y, mp_theta, mp_kappa = frenet_path_opt[start_s_match_index]  # 取出投影点的路径信息
     ds = s - s_map[start_s_match_index]  # 计算规划起点的投影点和匹配点之间的位矢
-    mp_tou_v = np.array([math.cos(mp_theta), math.sin(mp_theta)])   # 速度切线方向
+    mp_tou_v = np.array([math.cos(mp_theta), math.sin(mp_theta)])  # 速度切线方向
     r_m = np.array([mp_x, mp_y])  # 匹配点位矢
     proj_x, proj_y = r_m + ds * mp_tou_v  # 近似投影点位置矢量
     proj_theta = mp_theta + mp_kappa * ds

@@ -11,13 +11,12 @@ import cvxopt
 from planner import planning_utils
 import time
 
-"""
-首先进行必要的坐标转换
-"""
+
 def frenet_2_x_y_theta_kappa(plan_start_s, plan_start_l, enriched_s_list: list, enriched_l_list: list,
                              frenet_path_opt: list,
                              s_map: list):
     """  已验证
+    首先进行必要的坐标转换
     将增加采样点后动态规划得到的s-l路径转换为直角坐标系下路径信息x, y, theta, kappa
     param:  plan_start_s: 规划起点的s,l
             plan_start_l:
@@ -48,6 +47,32 @@ def frenet_2_x_y_theta_kappa(plan_start_s, plan_start_l, enriched_s_list: list, 
     target_path = planning_utils.smooth_reference_line(target_xy)
 
     return target_path
+
+
+def cal_proj_point(s, pre_match_index, frenet_path_opt: list, s_map: list):
+    """
+    确定给定的s在参考线上的投影点的路径信息
+    param:  s: 要计算投影点的位矢s
+            pre_match_index: 上个投影点的索引
+            frenet_path_opt:  优化后的参考线
+            s_map: 位矢map
+    return: 投影点的路径信息 (x, y, theta, kappa), 起始匹配点的索引
+    """
+    # 确定s在s_map中的索引
+    start_s_match_index = pre_match_index
+    while s_map[start_s_match_index + 1] < s:  # 这里存在一点问题，如果动态规划采样点过长，会超出s_map的范围(在frenet_2_x_y_theta_kappa中解决)
+        start_s_match_index += 1
+        # if start_s_match_index == (len(s_map) - 1):
+        #     break
+    mp_x, mp_y, mp_theta, mp_kappa = frenet_path_opt[start_s_match_index]  # 取出投影点的路径信息
+    ds = s - s_map[start_s_match_index]  # 计算规划起点的投影点和匹配点之间的位矢
+    mp_tou_v = np.array([math.cos(mp_theta), math.sin(mp_theta)])
+    r_m = np.array([mp_x, mp_y])  # 匹配点位矢
+    proj_x, proj_y = r_m + ds * mp_tou_v  # 近似投影点位置矢量
+    proj_theta = mp_theta + mp_kappa * ds
+    proj_kappa = mp_kappa
+    res = (proj_x, proj_y, proj_theta, proj_kappa, start_s_match_index)
+    return res
 
 
 def Quadratic_planning(l_min, l_max, plan_start_l, plan_start_dl, plan_start_ddl, dp_sampling_res=2,
@@ -187,7 +212,7 @@ def Quadratic_planning(l_min, l_max, plan_start_l, plan_start_dl, plan_start_ddl
                             G=cvxopt.matrix(G), h=cvxopt.matrix(h),
                             A=cvxopt.matrix(Aeq), b=cvxopt.matrix(beq)
                             )
-    print("the time cost of cvxopt.solvers.qp", time.time() - begin_time)
+    # print("the time cost of cvxopt.solvers.qp", time.time() - begin_time)
     qp_path_l = res['x'][0::3]      # 从第1个元素开始，每隔3个元素取1个
     qp_path_dl = res['x'][1::3]
     qp_path_ddl = res['x'][2::3]
@@ -205,8 +230,8 @@ def cal_lmin_lmax(dp_path_s, dp_path_l, obs_s_list, obs_l_list, obs_length, obs_
             obs_width:
     return: lmin_list, lmax_list, 轨迹上每个s对应的上下界
     """
-    lmin = -6 * np.ones(len(dp_path_s))     # 老王：-8
-    lmax = 6 * np.ones(len(dp_path_s))      # 老王：8
+    lmin = -10 * np.ones(len(dp_path_s))     # 老王：-8
+    lmax = 10 * np.ones(len(dp_path_s))      # 老王：8
     offset = 2      # 偏移量 解释如下
     # 先对障碍物进行处理
     for i in range(len(obs_s_list)):
@@ -228,19 +253,20 @@ def cal_lmin_lmax(dp_path_s, dp_path_l, obs_s_list, obs_l_list, obs_length, obs_
         我所选择的策略是车尾向右偏移2个路径分辨率,即索引加2;头部加2的目的是适当扩充右边界，防止车辆离开障碍物的时候过于靠近障碍物
         """
 
-        print("obs_index", obs_s_min_index, obs_s_max_index)
+        # print("obs_s_min_index:", obs_s_min_index, "obs_s_max_index:", obs_s_max_index)
         centre_index = np.argmin(np.abs(np.array(dp_path_s) - obs_s_list[i]))  # 车辆质心的s索引，
         # 就是用来判断障碍物在动态规划路线的哪一侧
         path_l = dp_path_l[centre_index]  # 质心所在位置的l，就是在障碍物所在的s处dp规划车辆应该处的位置
+        """  
+                *** 注意：由于UE4采用的是左手系，所以SL图方向相反，即ego左侧L为负，右侧L为正 ***
+        """
         if path_l < obs_l_list[i]:
-            """决策为向右绕过障碍物"""
-            print("决策为向右绕过障碍物")
+            # print("决策为向左绕过障碍物")
             for j in range(obs_s_min_index, obs_s_max_index + 1):
                 # l_max[j]为所有决策为向右绕过障碍物的l边界的最小值
                 lmax[j] = min(lmax[j], obs_l_list[i] - obs_width / 2)
         else:
-            """决策为向左绕过障碍物"""
-            print("决策为向左绕过障碍物")
+            # print("决策为向右绕过障碍物")
             for j in range(obs_s_min_index, obs_s_max_index + 1):
                 # l_min[j]为所有决策为向左绕过障碍物的l边界的最大值
                 lmin[j] = max(lmin[j], obs_l_list[i] + obs_width / 2)
@@ -336,7 +362,7 @@ def DP_algorithm(obs_s_list: list, obs_l_list: list,
     else:  # 没有障碍物的情况，理想路径就是l=0的一系列点
         DP_row_index_list = list(np.ones(col) * ((row + 1) / 2 - 1))  # 没有障碍物的条件下，就走直线
     # 将数组中的索引转化为s-l
-    print("DP_row_index_list: ", DP_row_index_list)
+    # print("DP_row_index_list: ", DP_row_index_list)
     DP_s_list = []
     DP_l_list = []
     for i in range(len(DP_row_index_list)):
@@ -555,7 +581,7 @@ def cal_neighbor_cost(obs_s_list, obs_l_list, pre_node_s, pre_node_l,
         # 但是考虑量采样点之间的五次多项式一般较平缓，我们就直接近似，简化计算,
         # TODO 这里有时会出现问题，就是曲线扭曲时误差较大，导致无法找到无碰撞路径，后面要考虑把这部分优化掉
         cost_collision += cal_obs_cost(w_cost_collision, square_d)
-    print(cost_smooth, cost_collision, cost_ref)
+    # print(cost_smooth, cost_collision, cost_ref)
     return cost_smooth + cost_collision + cost_ref
 
 
@@ -581,28 +607,3 @@ def cal_obs_cost(w_cost_collision, square_d: np.ndarray, danger_dis=4, safe_dis=
             # print("danger range", "^^^^^^^^^^^^^^^^^^^^")
             cost += 5000 / s_d
     return cost
-
-def cal_proj_point(s, pre_match_index, frenet_path_opt: list, s_map: list):
-    """
-    确定给定的s在参考线上的投影点的路径信息
-    param:  s: 要计算投影点的位矢s
-            pre_match_index: 上个投影点的索引
-            frenet_path_opt:  优化后的参考线
-            s_map: 位矢map
-    return: 投影点的路径信息 (x, y, theta, kappa), 起始匹配点的索引
-    """
-    # 确定s在s_map中的索引
-    start_s_match_index = pre_match_index
-    while s_map[start_s_match_index + 1] < s:  # 这里存在一点问题，如果动态规划采样点过长，会超出s_map的范围(在frenet_2_x_y_theta_kappa中解决)
-        start_s_match_index += 1
-        # if start_s_match_index == (len(s_map) - 1):
-        #     break
-    mp_x, mp_y, mp_theta, mp_kappa = frenet_path_opt[start_s_match_index]  # 取出投影点的路径信息
-    ds = s - s_map[start_s_match_index]  # 计算规划起点的投影点和匹配点之间的位矢
-    mp_tou_v = np.array([math.cos(mp_theta), math.sin(mp_theta)])
-    r_m = np.array([mp_x, mp_y])  # 匹配点位矢
-    proj_x, proj_y = r_m + ds * mp_tou_v  # 近似投影点位置矢量
-    proj_theta = mp_theta + mp_kappa * ds
-    proj_kappa = mp_kappa
-    res = (proj_x, proj_y, proj_theta, proj_kappa, start_s_match_index)
-    return res

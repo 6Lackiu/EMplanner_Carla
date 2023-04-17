@@ -46,11 +46,12 @@ class global_path_planner(object):
         由于carla.Map.get_topology()只能函数获取起点和终点信息构成的边信息，这些信息不能够为全局路径规划提供细节信息，因此需要重新构建拓扑
         新拓扑用字典类型存储每个路段，具有以下结构：
         {
-        entry (carla.Waypoint): waypoint of entry point of road segment，
-        exit (carla.Waypoint): waypoint of exit point of road segment，
+        entry (carla.Waypoint): waypoint of entry point of road segment
+        exit (carla.Waypoint): waypoint of exit point of road segment
         path (list of carla.Waypoint):  list of waypoints between entry to exit, separated by the resolution
         }
-        :return None
+        return: None
+        注：carla自带的_build_topology中还有entryxyz,exitxyz属性，在这里不做使用
         """
         self._topology = []
         for seg in self._map.get_topology():
@@ -134,9 +135,9 @@ class global_path_planner(object):
 
     def _find_location_edge(self, loc: carla.Location):
         """
-        确定当前位置所在的边
-        :param loc: 给定的一个位置
-        :return: 返回graph的一条边(n1, n2)
+        用于查找给定位置所属的路段，并返回其所属的edge
+        param:  loc: 给定的一个位置
+        return: 返回graph的一条边(n1, n2)
         """
         nearest_wp = self._map.get_waypoint(loc)  # type: carla.Waypoint
         # 现在面临一个问题，对于两个路段相接处的节点，定位的是前一个路段还是后一个路段,在路径规划中二者本质上没有区别，但是自己没有搞明白这个方法的原理
@@ -152,9 +153,9 @@ class global_path_planner(object):
     def _route_search(self, origin, destination):
         """
         使用A*确定从起点到终点的最优距离
-        :param origin: carla.Location 类型
-        :param destination:
-        :return: list类型，成员是图中节点id
+        param:  origin: carla.Location 类型
+                destination:
+        return: list类型，成员是图中节点id
         """
         start_edge = self._find_location_edge(origin)  # 获取起点所在边
         end_edge = self._find_location_edge(destination)  # 获取终点所在边
@@ -167,9 +168,9 @@ class global_path_planner(object):
     def _A_star(self, n_begin, n_end):
         """
         采用A*算法计算两点之间的最短路径
-        :param n_begin: 起点所在边的左端点id
-        :param n_end:  终点所在边的左端点id
-        :return: 路径list， 每个元素是图中节点id
+        param:  n_begin: 起点所在边的左端点id
+                n_end:  终点所在边的左端点id
+        return: 路径list， 每个元素是图中节点id
         """
         route = []
         open_set = dict()  # 字典， 记录每个节点的父节点和最短路径
@@ -216,9 +217,9 @@ class global_path_planner(object):
     def _closest_index(current_waypoint, waypoint_list):
         """
         确定waypoint_list中距离当前路点最近的路点的索引值
-        :param current_waypoint:
-        :param waypoint_list:
-        :return: 整数， 索引值
+        param:  current_waypoint:
+                waypoint_list:
+        return: 整数， 索引值
         """
         min_distance = float('inf')  # 初始情况下设置为最大值
         closest_index = -1
@@ -233,9 +234,9 @@ class global_path_planner(object):
     def search_path_way(self, origin, destination):
         """
         得到完整的由waypoint构成的完整路径
-        :param origin: 起点，carla.Location类型
-        :param destination: 终点
-        :return: list类型，元素是(carla.Waypoint类型, edge["type"]),这里多加了一个边的类型进行输出，
+        param:  origin: 起点，carla.Location类型
+                destination: 终点
+        return: list类型，元素是(carla.Waypoint类型, edge["type"]),这里多加了一个边的类型进行输出，
                  是为了后面的更全面考虑某些道路规定的跟车或者超车行为
         """
         route = self._route_search(origin, destination)  # 获取A*的初步规划结果->list
@@ -250,8 +251,8 @@ class global_path_planner(object):
         for wp in path[clos_index:]:
             path_way.append((wp, edge["type"]))
 
-        # 中间路径,先判断是否有中间路径
-        if len(route) > 3:
+        # 中间路径
+        if len(route) > 3:  # 先判断是否有中间路径
             for index in range(1, len(route) - 2):
                 edge = self._graph.get_edge_data(route[index], route[index + 1])
                 path = edge["path"] + [edge["exit_waypoint"]]  # 每一段路段的终点是下一个路段的起点，所以这里不加起点
