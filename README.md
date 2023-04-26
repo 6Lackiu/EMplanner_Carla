@@ -9,7 +9,7 @@ Lateral Control based on MPC and LQR
 ### Planning
 Path Planning based on S-L graph
 
-Speed Planning based on S-T graph
+Speed Planning based on S-T graph(TODO)
 
 
 ### Requirements
