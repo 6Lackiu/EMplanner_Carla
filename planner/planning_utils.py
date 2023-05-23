@@ -447,6 +447,7 @@ def cal_projection_s_fun(local_path_opt: list, match_index_list: list, xy_list: 
 
 def cal_s_map_fun(local_path_opt: list, origin_xy: tuple):
     """
+    即index2s
     计算参考线上每个节点与s的映射关系(方便查表s?), 以车辆当前投影点为原点，不是以参考线的起点。 s就是位矢，用折线来拟合
     param:  local_path_opt: 优化后的frenet参考线[(x, y, theta, kappa), ...]
             origin_xy: 车辆当前的位置
@@ -483,7 +484,7 @@ def cal_s_l_fun(obs_xy_list: list, local_path_opt: list, s_map: list):
     3.计算L,即障碍物与投影点的距离
     param:  obs_xy_list: 给定一些障碍物对应点点的坐标
             local_path_opt: 优化后的参考线[(x_opt0, y_opt0, theta_0, kappa_0), ... ]
-            s_map:
+            s_map
     return: s_list 和 l_list
     """
 
@@ -516,11 +517,11 @@ def cal_s_l_deri_fun(xy_list: list, V_xy_list: list, a_xy_list: list, local_path
     1.确定每个点的在参考线上的匹配点和投影点；
     2.计算S,S是投影点距离规划起点的位矢，就是连接这些离散点的折线长度；
     3.计算L,即障碍物与投影点的距离
-    param:  V_xy_list: velocity, 这里速度V_xy和加速度a_xy后面的_xy代表X,Y方向的分量
-            a_xy_list: acceleration
+    param:  V_xy_list: velocity, 这里速度V_xy和加速度a_xy后面的_xy代表X,Y方向的分量 ((vx,vy),...)
+            a_xy_list: acceleration ((ax,ay), ...)
             xy_list: 给定一些对应点的坐标
             local_path_xy_opt: 优化后的参考线[(x_opt0, y_opt0, theta_0, kappa_0), ... ]
-            origin_xy: 车辆当前的实际位置
+            origin_xy: 当前的实际位置
     return:  坐标变换的七个变量，每个对应一个列表
     具体公式看笔记1.3坐标转换下
     """
@@ -562,6 +563,8 @@ def cal_s_l_deri_fun(xy_list: list, V_xy_list: list, a_xy_list: list, local_path
         ddl_list.append(ddl)
 
         """5.calculate the arc differential of l"""
+        #  向量法做cartesian与frenet的转换要更简单，但是也有缺点，向量法必须依赖速度加速度
+        #  l' = l_dot/s_dot 但是如果s_dot = 0 此方法就失效了
         if abs(ds) < 1e-6:
             l_ds = 0
         else:
@@ -635,7 +638,7 @@ def predict_block_based_on_frenet(vehicle_loc, vehicle_velocity, local_frenet_pa
     index = np.argmin(abs(np.array(cur_path_s) - s))
     l = cur_path_l[index]
     proj_x, proj_y, proj_theta, proj_kappa, pre_match_index = cal_proj_point_1(s, 0, local_frenet_path_opt, s_map)
-    nor_v = np.array([-math.sin(proj_theta), math.cos(proj_theta)])  # 法向量***************************************
+    nor_v = np.array([-math.sin(proj_theta), math.cos(proj_theta)])  # 法向量
     pred_x, pred_y = np.array([proj_x, proj_y]) + l * nor_v
 
     return pred_x, pred_y
@@ -698,3 +701,109 @@ def cal_quintic_coefficient(start_l, start_dl, start_ddl, end_l, end_dl, end_ddl
     B = B.reshape((6, 1))
     coeffi = np.linalg.inv(A) @ B
     return list(coeffi.squeeze())
+
+
+def Frenet2Cartesian(s_set, l_set, dl_set, ddl_set, frenet_path_x, frenet_path_y, frenet_path_heading, frenet_path_kappa, index2s):
+    """
+        Frenet 转 Cartesian
+    """
+    # 由于不知道有多少个(s,l)要转化成直角坐标，因此做缓冲
+    # 输出初始化
+    x_set = np.ones((600, 1)) * np.nan
+    y_set = np.ones((600, 1)) * np.nan
+    heading_set = np.ones((600, 1)) * np.nan
+    kappa_set = np.ones((600, 1)) * np.nan
+
+    for i in range(len(s_set)):
+        if np.isnan(s_set[i]):
+            break
+        # 计算(s,l)在frenet坐标轴上的投影
+        proj_x, proj_y, proj_heading, proj_kappa = CalcProjPoint(s_set[i], frenet_path_x, frenet_path_y,
+                                                                 frenet_path_heading, frenet_path_kappa, index2s)
+        nor = np.array([-np.sin(proj_heading), np.cos(proj_heading)])
+        point = np.array([proj_x, proj_y]) + l_set[i] * nor
+        x_set[i] = point[0]
+        y_set[i] = point[1]
+        heading_set[i] = proj_heading + np.arctan(dl_set[i] / (1 - proj_kappa * l_set[i]))
+        # 近似认为 kappa' == 0, frenet转cartesian公式
+        kappa_set[i] = ((ddl_set[i] + proj_kappa * dl_set[i] * np.tan(heading_set[i] - proj_heading)) *
+                        (np.cos(heading_set[i] - proj_heading) ** 2) / (1 - proj_kappa * l_set[i]) + proj_kappa) * \
+                       np.cos(heading_set[i] - proj_heading) / (1 - proj_kappa * l_set[i])
+
+    return x_set, y_set, heading_set, kappa_set
+
+
+def CalcProjPoint(s, frenet_path_x, frenet_path_y, frenet_path_heading, frenet_path_kappa, s_map):
+    """
+        该函数将计算在frenet坐标系下，点(s,l)在frenet坐标轴的投影的直角坐标(proj_x,proj_y,proj_heading,proj_kappa).T
+        s_map从进程中获得
+    """
+    # 先找匹配点的编号
+    match_index = 1
+    while s_map[match_index] < s:
+        match_index += 1
+    match_point = np.array([frenet_path_x[match_index], frenet_path_y[match_index]])
+    match_point_heading = frenet_path_heading[match_index]
+    match_point_kappa = frenet_path_kappa[match_index]
+    ds = s - s_map[match_index]
+    match_tor = np.array([np.cos(match_point_heading), np.sin(match_point_heading)])
+    proj_point = match_point + ds * match_tor
+    proj_heading = match_point_heading + ds * match_point_kappa
+    proj_kappa = match_point_kappa
+    proj_x = proj_point[0]
+    proj_y = proj_point[1]
+    return proj_x, proj_y, proj_heading, proj_kappa
+
+
+def trajectory_index2s(trajectory_x, trajectory_y):
+    """
+        该函数将计算以trajectory的s 与 x y 的对应关系，可以看作是trajectory index2s
+        params: trajectory_x_init, trajectory_y_init
+    """
+    n = len(trajectory_x)
+    path_index2s = np.zeros(n)
+    s = 0
+    tmp = 0
+    for i in range(1, len(trajectory_x)):
+        if np.isnan(trajectory_x[i]):
+            tmp = i
+            break
+        s += np.sqrt((trajectory_x[i] - trajectory_x[i - 1]) ** 2 + (trajectory_y[i] - trajectory_y[i - 1]) ** 2)
+        path_index2s[i] = s
+    # 计算出trajectory的长度
+    if tmp == n - 1:
+        path_s_end = path_index2s[-1]
+    else:
+        # 因为循环的退出条件为isnan(trajectory_x(i)) 所以 i 所对应的数为 nan
+        path_s_end = path_index2s[tmp - 1]
+
+    return path_index2s
+
+
+def cal_dy_obs_deri(l_set, vx_set, vy_set, proj_heading_set, proj_kappa_set):
+    """
+        该函数将计算frenet坐标系下动态障碍物的s_dot, l_dot, dl/ds
+    """
+    n = 128
+    # 输出初始化
+    s_dot_set = np.ones(n) * np.nan
+    l_dot_set = np.ones(n) * np.nan
+    dl_set = np.ones(n) * np.nan
+
+    for i in range(len(l_set)):
+        if np.isnan(l_set[i]):
+            break
+        v_h = np.array([vx_set[i], vy_set[i]])
+        n_r = np.array([-np.sin(proj_heading_set[i]), np.cos(proj_heading_set[i])])
+        t_r = np.array([np.cos(proj_heading_set[i]), np.sin(proj_heading_set[i])])
+        l_dot_set[i] = np.dot(v_h, n_r)
+        s_dot_set[i] = np.dot(v_h, t_r) / (1 - proj_kappa_set[i] * l_set[i])
+        # 向量法做cartesian与frenet的转换要更简单，但是也有缺点，向量法必须依赖速度加速度
+        # l' = l_dot/s_dot 但是如果s_dot = 0 此方法就失效了
+        if abs(s_dot_set[i]) < 1e-6:
+            dl_set[i] = 0
+        else:
+            dl_set[i] = l_dot_set[i] / s_dot_set[i]
+
+    return s_dot_set, l_dot_set, dl_set
+

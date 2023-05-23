@@ -5,16 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="92098641-30e4-4e3d-b4d5-c4623df731a0" name="Changes" comment="optimize some methods and annotations">
-      <change afterPath="$PROJECT_DIR$/test_8_1.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/planner/speed_planning_test.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test_10.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controller/controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/controller/controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/planner/global_planning.py" beforeDir="false" afterPath="$PROJECT_DIR$/planner/global_planning.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/planner/path_planning.py" beforeDir="false" afterPath="$PROJECT_DIR$/planner/path_planning.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/planner/planning_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/planner/planning_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sensors/Sensors_detector_lib.py" beforeDir="false" afterPath="$PROJECT_DIR$/sensors/Sensors_detector_lib.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_7.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_7.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_8.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_8.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_9.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_9.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,7 +55,8 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/controller/controller.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/planner/path_planning.py" root0="SKIP_INSPECTION" />
-    <setting file="file://$PROJECT_DIR$/planner/planning_utils.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/planner/planning_utils.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/test_10.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/test_7.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/test_8.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/test_8_1.py" root0="SKIP_INSPECTION" />
@@ -95,7 +92,7 @@
       <recent name="E:\GitHub\EMplanner_Carla\MySimulation" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.test">
+  <component name="RunManager" selected="Python.test_7">
     <configuration name="test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="EMplanner_Carla" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -110,6 +107,72 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="test_7" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="EMplanner_Carla" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test_7.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="test_8_1" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="EMplanner_Carla" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test_8_1.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="test_9 (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="EMplanner_Carla" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test_9.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -142,6 +205,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.test_7" />
+        <item itemvalue="Python.test_8_1" />
+        <item itemvalue="Python.test_9 (1)" />
         <item itemvalue="Python.test" />
         <item itemvalue="Python.test_9" />
       </list>
@@ -174,6 +240,22 @@
       <workItem from="1681437704433" duration="13865000" />
       <workItem from="1681540515139" duration="10326000" />
       <workItem from="1681696331710" duration="1423000" />
+      <workItem from="1681717714811" duration="159000" />
+      <workItem from="1681717927467" duration="664000" />
+      <workItem from="1681783381179" duration="6000" />
+      <workItem from="1681800264758" duration="2892000" />
+      <workItem from="1681890824297" duration="860000" />
+      <workItem from="1682056919482" duration="5049000" />
+      <workItem from="1682340767254" duration="1026000" />
+      <workItem from="1682409055734" duration="14406000" />
+      <workItem from="1682497031501" duration="7078000" />
+      <workItem from="1682562569061" duration="23257000" />
+      <workItem from="1682607417966" duration="74000" />
+      <workItem from="1682648575283" duration="16555000" />
+      <workItem from="1683082768827" duration="24000" />
+      <workItem from="1684330774330" duration="2453000" />
+      <workItem from="1684499853261" duration="39000" />
+      <workItem from="1684817452091" duration="3166000" />
     </task>
     <task id="LOCAL-00001" summary="optimize some methods and annotations">
       <created>1668417370086</created>
@@ -320,6 +402,9 @@
     <option name="LAST_COMMIT_MESSAGE" value="optimize some methods and annotations" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/EMplanner_Carla$test.coverage" NAME="test 覆盖结果" MODIFIED="1680857603005" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/EMplanner_Carla$test_9__1_.coverage" NAME="test_9 (1) 覆盖结果" MODIFIED="1684827437592" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/EMplanner_Carla$test_8_1.coverage" NAME="test_8_1 覆盖结果" MODIFIED="1684827485933" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/EMplanner_Carla$test.coverage" NAME="test 覆盖结果" MODIFIED="1682430683701" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/EMplanner_Carla$test_7.coverage" NAME="test_7 覆盖结果" MODIFIED="1684827548070" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

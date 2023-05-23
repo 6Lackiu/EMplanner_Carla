@@ -43,7 +43,7 @@ def frenet_2_x_y_theta_kappa(plan_start_s, plan_start_l, enriched_s_list: list, 
                                                                                  frenet_path_opt, s_map)
         nor_v = np.array([-math.sin(proj_theta), math.cos(proj_theta)])  # 法向量
         cur_x, cur_y, = np.array([proj_x, proj_y]) + cur_l * nor_v
-        target_xy.append((cur_x, cur_y))
+        target_xy.append((cur_x, cur_y, proj_theta, proj_kappa))
     target_path = planning_utils.smooth_reference_line(target_xy)
 
     return target_path
